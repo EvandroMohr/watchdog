@@ -1,3 +1,6 @@
+
+[![GitHub release](https://img.shields.io/github/release/qubyte/rubidium.svg)](http://watchdog.evandromohr.com.br)
+
 # Watchdog
 Arduino interface for antennas and device management. It allows you make manually reset, schedule a reset task or just adjust settings for auto management.
 
