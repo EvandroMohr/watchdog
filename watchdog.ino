@@ -5,8 +5,14 @@
 	Released into the public domain.
 */
 
+#include "DHT.h"
 #include "SD.h"
 #include "ICMPPing.h"
+
+#define DHTPIN 2     
+#define DHTTYPE DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
 
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; 
 byte ip[] = {10, 0, 0, 9};
@@ -15,14 +21,16 @@ char buffer [128];
 ICMPPing ping(pingSocket, (uint16_t)random(0, 255));
 
 File file;
-EthernetServer server(9966);
-#define REQ_BUF_SZ   100
+EthernetServer server(10050);
+
+#define REQ_BUF_SZ   80
 #define IP_BUF_SZ   18
 
 char HTTP_req[REQ_BUF_SZ] = {0}; 
 char req_index = 0;
 long previousMillis = 0;
 
+int portaPresenca=3;
 
 char ip_buf_1[IP_BUF_SZ] = {0};
 char ip_buf_2[IP_BUF_SZ] = {0};
@@ -44,6 +52,10 @@ int reles[4]={6,7,8,9};
 
 void setup() {
 
+  dht.begin();
+
+  pinMode(portaPresenca,INPUT);
+
   for(int n=0; n<4; n++){
     pinMode(reles[n], OUTPUT);
     digitalWrite(reles[n], HIGH);
@@ -55,15 +67,11 @@ void setup() {
     return;
   }
 
-  //writeARP();
   readARP();
-
-  
   
 }
 void loop() {
   pinga();
-  Serial.begin(9600);
   EthernetClient client = server.available();  // try to get client
 
   if (client) {  // got client?
@@ -125,7 +133,17 @@ void loop() {
             client.print(F("]"));
           } else if (startsWith(HTTP_req, "GET /favicon.ico")) {
             client.println(F("HTTP/1.1 200 OK\nConnnection: close"));
-          }
+          } else if (startsWith(HTTP_req, "agent.ping")) {
+            client.println(F("1"));
+          } else if (startsWith(HTTP_req, "temp")) {
+            float t = dht.readTemperature();
+            client.println(t);
+          } else if (startsWith(HTTP_req, "umid")) {
+            float h = dht.readHumidity();
+            client.println(h);
+          } else if (startsWith(HTTP_req, "pres")) {
+            client.println(digitalRead(portaPresenca));
+          } 
 
           req_index = 0;
           StrClear(HTTP_req, REQ_BUF_SZ);
